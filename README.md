@@ -12,11 +12,16 @@
   >>rpc-netty-spring  
   
   >模块说明   
-  >>rpc-common: 封装rpc框架的主要处理逻辑。支持协议扩展，实现协议的不同部分即可。   
+  >>rpc-common: 封装rpc框架的主要处理逻辑。支持协议扩展，实现协议的不同部分即可。  
+  >> 
   >>rpc-thrift: 基于thrift协议框架，定制化rpc功能。   
+  >>
   >>rpc-netty: 基于netty通信框架 & protostuff序列化工具，实现方法同步调用功能。   
+  >>
   >>rpc-application-spring: rpc应用注册spring化。   
+  >>
   >>rpc-thrift-spring: thrift协议的rpc spring功能。   
+  >>
   >>rpc-netty-spring: netty通信的rpc spring功能。   
   
 ## 三、主要功能  
