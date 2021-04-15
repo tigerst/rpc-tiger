@@ -13,6 +13,7 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
     <name>rpc netty</name>
+
     <dependencies>
         <dependency>
             <groupId>com.tiger.rpc</groupId>
