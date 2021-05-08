@@ -6,6 +6,7 @@ import com.tiger.rpc.common.enums.ProtocolTypeEnum;
 import com.tiger.rpc.common.enums.ServiceCodeEnum;
 import com.tiger.rpc.common.exception.ServiceException;
 import com.tiger.rpc.common.utils.Constants;
+import com.tiger.rpc.common.utils.UriUtils;
 import com.tiger.rpc.netty.consumer.handler.NettyDefaultHandler;
 import com.tiger.rpc.netty.consumer.handler.NettyDirectorHandler;
 import lombok.AllArgsConstructor;
@@ -14,10 +15,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -137,7 +135,12 @@ public class NettyReferenceProxyClient {
 			throw new ServiceException(ServiceCodeEnum.INTERFACE_NOT_IMPORT.getCode(),
 					String.format(ServiceCodeEnum.INTERFACE_NOT_IMPORT.getValue(), iFaceInterface.getName()));
 		}
-
+		//小集群地址解析 & 检测
+		List<String> uris = UriUtils.getUris(hostPorts, ProtocolTypeEnum.NETTY.getValue());
+		if (CollectionUtils.isEmpty(uris)) {
+			throw new ServiceException(ServiceCodeEnum.ILLEGAL_PARAMETER.getCode(),
+					String.format(ServiceCodeEnum.ILLEGAL_PARAMETER.getValue(), "hostPorts"));
+		}
 		//初始化基于服务发现器的直连代理
 		NettyDirectorHandler handler = new NettyDirectorHandler(discovery);
 		//设置连接池
@@ -148,7 +151,7 @@ public class NettyReferenceProxyClient {
 			handler.setRetry(config.getRetry());
 		}
 		//设置小集群地址
-		handler.setUris(getUris(hostPorts));
+		handler.setUris(uris);
 		//获取类加载器
 		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 		//创建代理实例，强转类型
@@ -176,44 +179,6 @@ public class NettyReferenceProxyClient {
 			throw new ServiceException(ServiceCodeEnum.DISCOVERY_NOT_INITIALIZED.getCode(),
 					ServiceCodeEnum.DISCOVERY_NOT_INITIALIZED.getValue());
 		}
-	}
-
-	/**
-	 * 根据传入的host:port列表，获取uris
-	 * @param hostPorts
-	 * @return
-	 */
-	private List<String> getUris(List<String> hostPorts) {
-		List<String> uris = new ArrayList<>();
-		StringBuffer sb = new StringBuffer();
-		String[] elements;
-		String portRegex = Constants.LINE_START_REGEX + Constants.PORT_VALUE_REGEX;
-		for (String hostPort : hostPorts) {
-			if (StringUtils.isBlank(hostPort)) {
-				//跳过为空的
-				continue;
-			}
-			elements = hostPort.split(Constants.HOST_PORT_SEPARATOR);
-			if (elements.length != 2) {
-				//跳过不规范的
-				continue;
-			}
-			if (StringUtils.isBlank(elements[0])) {
-				throw new ServiceException(ServiceCodeEnum.MISS_REQUIRED_PARAMETER.getCode(),
-						String.format(ServiceCodeEnum.MISS_REQUIRED_PARAMETER.getValue(), "host"));
-			}
-			//null不检测，从大集群中匹配端口
-			if (!Constants.NULL_STR.equalsIgnoreCase(elements[1].trim()) && elements[1].trim().matches(portRegex)) {
-				throw new ServiceException(ServiceCodeEnum.ILLEGAL_PARAMETER.getCode(),
-						String.format(ServiceCodeEnum.ILLEGAL_PARAMETER.getValue(), "port"));
-			}
-			sb.setLength(0);
-			//拼接uri---> netty://host:port or netty://host:null
-			sb.append(ProtocolTypeEnum.NETTY.getValue()).append(Constants.PROTOCOL_HOST_SEPARATOR)
-					.append(hostPort);
-			uris.add(sb.toString());
-		}
-		return uris;
 	}
 
 }

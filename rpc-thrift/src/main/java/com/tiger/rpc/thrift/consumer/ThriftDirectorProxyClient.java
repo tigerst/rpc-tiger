@@ -6,6 +6,7 @@ import com.tiger.rpc.common.enums.ProtocolTypeEnum;
 import com.tiger.rpc.common.enums.ServiceCodeEnum;
 import com.tiger.rpc.common.exception.ServiceException;
 import com.tiger.rpc.common.utils.Constants;
+import com.tiger.rpc.common.utils.UriUtils;
 import com.tiger.rpc.thrift.consumer.handler.ThriftDirectorHandler;
 import com.tiger.rpc.thrift.utils.ThriftUtils;
 import lombok.AllArgsConstructor;
@@ -14,12 +15,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
 import org.apache.thrift.transport.TSocket;
 
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -115,33 +114,11 @@ public class ThriftDirectorProxyClient {
 			throw new ServiceException(ServiceCodeEnum.MISS_REQUIRED_PARAMETER.getCode(),
 					String.format(ServiceCodeEnum.MISS_REQUIRED_PARAMETER.getValue(), "hostPorts"));
 		}
-		List<String> uris = new ArrayList<>();
-		StringBuffer sb = new StringBuffer();
-		String[] elements;
-		String portRegex = Constants.LINE_START_REGEX + Constants.PORT_VALUE_REGEX;
-		for (String hostPort : hostPorts) {
-			if (StringUtils.isBlank(hostPort)) {
-				//跳过为空的
-				continue;
-			}
-			elements = hostPort.split(Constants.HOST_PORT_SEPARATOR);
-			if (elements.length != 2) {
-				//跳过不规范的
-				continue;
-			}
-			if (StringUtils.isBlank(elements[0])) {
-				throw new ServiceException(ServiceCodeEnum.MISS_REQUIRED_PARAMETER.getCode(),
-						String.format(ServiceCodeEnum.MISS_REQUIRED_PARAMETER.getValue(), "host"));
-			}
-			if (elements[1].trim().matches(portRegex)) {
-				throw new ServiceException(ServiceCodeEnum.ILLEGAL_PARAMETER.getCode(),
-						String.format(ServiceCodeEnum.ILLEGAL_PARAMETER.getValue(), "port"));
-			}
-			sb.setLength(0);
-			//拼接uri---> thrift://host:port，不基于服务发现器的端口不支持null情况
-			sb.append(ProtocolTypeEnum.THRIFT.getValue()).append(Constants.PROTOCOL_HOST_SEPARATOR)
-					.append(hostPort);
-			uris.add(sb.toString());
+		//小集群地址解析 & 检测
+		List<String> uris = UriUtils.getUrisNotNullPort(hostPorts, ProtocolTypeEnum.THRIFT.getValue());
+		if (CollectionUtils.isEmpty(uris)) {
+			throw new ServiceException(ServiceCodeEnum.ILLEGAL_PARAMETER.getCode(),
+					String.format(ServiceCodeEnum.ILLEGAL_PARAMETER.getValue(), "hostPorts"));
 		}
 		//初始化直连代理(socket连接池必须传入)
 		ThriftDirectorHandler handler = new ThriftDirectorHandler(pool);
