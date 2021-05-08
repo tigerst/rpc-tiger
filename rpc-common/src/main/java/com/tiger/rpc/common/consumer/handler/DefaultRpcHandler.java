@@ -248,26 +248,32 @@ public abstract class DefaultRpcHandler<T> implements InvocationHandler, Closeab
      * @return
      */
     protected String getKey(Method method, Object[] args) throws ServiceException {
-        //1.获取地址
-        Class<?> enClosedClazz = method.getDeclaringClass().getEnclosingClass();
-        enClosedClazz = enClosedClazz == null? method.getDeclaringClass() : enClosedClazz;
-
-        if (this.helper == null) {
-            //未引入发现服务工具情况下，使用uri
-            checkAddress(uri, method, args);
-            return uri;
+        String key;
+        if (this.helper != null) {
+            //引入发现服务工具情况
+            Class<?> enClosedClazz = method.getDeclaringClass().getEnclosingClass();
+            enClosedClazz = enClosedClazz == null? method.getDeclaringClass() : enClosedClazz;
+            //1.获取地址
+            key = this.helper.getAddress(enClosedClazz.getName(), serviceVersion, uri);
+            //2.校验地址(控制到方法级别)
+            helper.checkAddress(key, method, args);
+        } else {
+            //未引入发现服务工具情况
+            //1.获取地址
+            key = this.getAddress(uri);
+            //2.校验地址(控制到方法级别)
+            this.checkAddress(uri, method, args);
         }
-
-        String key = this.helper.getAddress(enClosedClazz.getName(), serviceVersion, uri);
-
-        //2.校验地址(控制到方法级别)
-        helper.checkAddress(key, method, args);
-
         return key;
     }
 
     protected void checkAddress(String uri, Method method, Object[] args) {
         //不做处理，交给具体实现类处理
+    }
+
+    public String getAddress(String uri) {
+        //默认方法直接返回，交给具体实现类处理
+        return uri;
     }
 
 }
