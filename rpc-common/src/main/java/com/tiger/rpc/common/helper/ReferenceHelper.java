@@ -69,13 +69,13 @@ public class ReferenceHelper {
     }
 
     /**
-     * 获取provider地址
+     * 获取provider地址，传入小集群地址时，从小集群选择，否则从大集群选择
      * @param serviceName   服务名
      * @param version   版本号
-     * @param uri   定制化路径
+     * @param uris   小集群路径
      * @return  provider
      */
-    public String getAddress(String serviceName, String version, String uri) throws ServiceException {
+    public String getAddress(String serviceName, String version, List<String> uris) throws ServiceException {
         //zk上的服务名（服务加版本号）
         String key = null;
         try {
@@ -90,13 +90,14 @@ public class ReferenceHelper {
             /**
              * 策略选择
              */
-            if(StringUtils.isBlank(uri)){
-                //未指定时，根据策略选择
+            if(CollectionUtils.isEmpty(uris)){
+                //未指定小集群时，根据策略选择从大集群中选择
                 log.debug("uri is not set, will do choices by strategy");
                 key = register.getProviderStrategy().getProvider(addressList);
             } else {
-                //定制provider时
-                log.debug("uri is set {}, will do customized way", uri);
+                //指定小集群时，根据策略从小集群中选择
+                String uri = register.getProviderStrategy().getProvider(uris);
+                log.debug("uri[{}] is chosen, will do customized way", uri);
                 key = analyseCustomizedUri(uri, addressList);
                 if(StringUtils.isBlank(key)){
                     //在没有发现机器时，抛出异常

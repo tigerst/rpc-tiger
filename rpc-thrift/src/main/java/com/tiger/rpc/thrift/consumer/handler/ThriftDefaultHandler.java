@@ -35,14 +35,14 @@ import java.lang.reflect.Method;
 @Slf4j
 public class ThriftDefaultHandler extends DefaultRpcHandler<TSocket> implements InvocationHandler, Closeable {
 
-    /**
-     * client工厂方法
-     */
-    private TServiceClientFactory<TServiceClient> clientFactory;
+        /**
+         * client工厂方法
+         */
+        private TServiceClientFactory<TServiceClient> clientFactory;
 
     public ThriftDefaultHandler(ThriftServiceDiscovery discovery){
-        super(discovery);
-    }
+            super(discovery);
+        }
 
     public ThriftDefaultHandler setReferenceHelper(ThriftServiceDiscovery discovery) {
         super.setHelper(new ReferenceHelper(discovery));

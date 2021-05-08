@@ -1,18 +1,22 @@
 package com.tiger.rpc.common.consumer.handler;
 
 import com.alibaba.fastjson.JSON;
+import com.tiger.rpc.common.consumer.policy.ProviderStrategy;
 import com.tiger.rpc.common.enums.ServiceCodeEnum;
 import com.tiger.rpc.common.exception.ServiceException;
 import com.tiger.rpc.common.helper.ReferenceHelper;
 import com.tiger.rpc.common.register.ReferenceRegister;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @ClassName: DefaultRpcHandler.java
@@ -48,11 +52,16 @@ public abstract class DefaultRpcHandler<T> implements InvocationHandler, Closeab
     private int retry;
 
     /**
-     * 传入机器uri，默认为null
+     * 传入小集群地址列表uris，默认为null，当传入一个，表示定向指定
      * protocol(thrift/netty)://ip:port
      * protocol(thrift/netty)://ip:null
      */
-    private String uri = null;
+    private List<String> uris = null;
+
+    /**
+     * 选择策略
+     */
+    private ProviderStrategy<String> providerStrategy;
 
     public DefaultRpcHandler(){
 
@@ -77,7 +86,7 @@ public abstract class DefaultRpcHandler<T> implements InvocationHandler, Closeab
          */
         this.pool = null;
         this.helper = null;
-        this.uri = null;
+        this.uris = null;
     }
 
     @Override
@@ -244,36 +253,38 @@ public abstract class DefaultRpcHandler<T> implements InvocationHandler, Closeab
 
 
     /**
-     * 获取key：每次需要换着取，防止网络延迟及其宕机异常情况。其选择策略在discovery中设置的
+     * 获取key：每次需要换着取，防止网络延迟及其宕机异常情况。
+     *      基于服务发现起器的在discovery中处理
+     *      不基于服务发现器的，根据策略或者随机选择
      * @return
      */
     protected String getKey(Method method, Object[] args) throws ServiceException {
-        String key;
+        //引入发现服务工具情况
+        Class<?> enClosedClazz = method.getDeclaringClass().getEnclosingClass();
+        enClosedClazz = enClosedClazz == null? method.getDeclaringClass() : enClosedClazz;
+        String key = null;
         if (this.helper != null) {
-            //引入发现服务工具情况
-            Class<?> enClosedClazz = method.getDeclaringClass().getEnclosingClass();
-            enClosedClazz = enClosedClazz == null? method.getDeclaringClass() : enClosedClazz;
             //1.获取地址
-            key = this.helper.getAddress(enClosedClazz.getName(), serviceVersion, uri);
+            key = this.helper.getAddress(enClosedClazz.getName(), serviceVersion, uris);
             //2.校验地址(控制到方法级别)
             helper.checkAddress(key, method, args);
         } else {
             //未引入发现服务工具情况
-            //1.获取地址
-            key = this.getAddress(uri);
-            //2.校验地址(控制到方法级别)
-            this.checkAddress(uri, method, args);
+            if (providerStrategy != null) {
+                //1.获取地址
+                key = providerStrategy.getProvider(uris);
+                //2.校验地址(控制到方法级别)
+                providerStrategy.checkProvider(key, method, args);
+            } else if (CollectionUtils.isEmpty(uris)) {
+                //1.获取地址：随机选择
+                Collections.shuffle(uris);
+                key = uris.get(0);
+            } else {
+                throw new ServiceException(ServiceCodeEnum.SERVICE_NO_AVAILABLE_PROVIDERS.getCode(),
+                        String.format(ServiceCodeEnum.SERVICE_NO_AVAILABLE_PROVIDERS.getValue(), enClosedClazz.getName()));
+            }
         }
         return key;
-    }
-
-    protected void checkAddress(String uri, Method method, Object[] args) {
-        //不做处理，交给具体实现类处理
-    }
-
-    public String getAddress(String uri) {
-        //默认方法直接返回，交给具体实现类处理
-        return uri;
     }
 
 }

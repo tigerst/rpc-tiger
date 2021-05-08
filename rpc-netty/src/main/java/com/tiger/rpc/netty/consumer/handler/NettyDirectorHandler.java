@@ -2,14 +2,11 @@ package com.tiger.rpc.netty.consumer.handler;
 
 import com.alibaba.fastjson.JSON;
 import com.tiger.rpc.common.consumer.handler.DefaultRpcHandler;
-import com.tiger.rpc.common.consumer.policy.ProviderStrategy;
 import com.tiger.rpc.netty.consumer.NSocket;
 import com.tiger.rpc.netty.consumer.NettyServiceClient;
 import com.tiger.rpc.netty.consumer.NettyServiceDiscovery;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
@@ -28,9 +25,6 @@ import java.net.SocketException;
  */
 @Slf4j
 public class NettyDirectorHandler extends DefaultRpcHandler<NSocket> implements InvocationHandler, Closeable {
-
-    @Setter
-    private ProviderStrategy<String> providerStrategy;
 
     public NettyDirectorHandler(GenericKeyedObjectPool<String, NSocket> pool){
         super(pool);
@@ -112,14 +106,6 @@ public class NettyDirectorHandler extends DefaultRpcHandler<NSocket> implements 
     protected void processFinally(String key, Object client, NSocket tSocket) {
         log.debug("Release the current socket[{}] connected to provider[{}]",
                 JSON.toJSONString(tSocket.getLocalSocketAddress()), key);
-    }
-
-    @Override
-    protected void checkAddress(String uri, Method method, Object[] args) {
-        //不做处理，交给具体实现类处理
-        if (providerStrategy != null) {
-            providerStrategy.checkProvider(uri, method, args);
-        }
     }
 
     @Override

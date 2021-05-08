@@ -1,4 +1,4 @@
-package com.tiger.rpc.netty.consumer;
+package com.tiger.rpc.thrift.consumer;
 
 import com.google.common.collect.Lists;
 import com.tiger.rpc.common.consumer.policy.ProviderStrategy;
@@ -6,37 +6,42 @@ import com.tiger.rpc.common.enums.ProtocolTypeEnum;
 import com.tiger.rpc.common.enums.ServiceCodeEnum;
 import com.tiger.rpc.common.exception.ServiceException;
 import com.tiger.rpc.common.utils.Constants;
-import com.tiger.rpc.netty.consumer.handler.NettyDirectorHandler;
-import lombok.*;
+import com.tiger.rpc.thrift.consumer.handler.ThriftDirectorHandler;
+import com.tiger.rpc.thrift.utils.ThriftUtils;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
+import org.apache.thrift.transport.TSocket;
 
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @ClassName: NettyDirectorProxyClient.java
+ * @ClassName: ThriftDirectorProxyClient.java
  *
  * @Description: consumer直连代理，内部管理有连接池，代理销毁时，清空资源
  *
  * @Author: Tiger
  *
- * @Date: 2021/5/7
+ * @Date: 2019/1/18
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
 @Slf4j
-public class NettyDirectorProxyClient {
+public class ThriftDirectorProxyClient {
 
 	/**
 	 * 引入连接池
 	 */
-	private GenericKeyedObjectPool<String, NSocket> pool;
+	private GenericKeyedObjectPool<String, TSocket> pool;
 
 	/**
 	 * 选择策略
@@ -133,15 +138,16 @@ public class NettyDirectorProxyClient {
 						String.format(ServiceCodeEnum.ILLEGAL_PARAMETER.getValue(), "port"));
 			}
 			sb.setLength(0);
-			//拼接uri---> netty://host:port，不基于服务发现器的端口不支持null情况
-			sb.append(ProtocolTypeEnum.NETTY.getValue()).append(Constants.PROTOCOL_HOST_SEPARATOR)
+			//拼接uri---> thrift://host:port，不基于服务发现器的端口不支持null情况
+			sb.append(ProtocolTypeEnum.THRIFT.getValue()).append(Constants.PROTOCOL_HOST_SEPARATOR)
 					.append(hostPort);
 			uris.add(sb.toString());
 		}
 		//初始化直连代理(socket连接池必须传入)
-		NettyDirectorHandler handler = new NettyDirectorHandler(pool);
+		ThriftDirectorHandler handler = new ThriftDirectorHandler(pool);
 		//传入策略
 		handler.setProviderStrategy(providerStrategy);
+		handler.setClientFactory(ThriftUtils.getClientFactory(iFaceInterface));
 		handler.setRetry(retry);
 		//设置小集群地址
 		handler.setUris(uris);
@@ -151,5 +157,6 @@ public class NettyDirectorProxyClient {
 		//创建代理实例，强转类型
 		return (T) Proxy.newProxyInstance(classLoader, new Class[] { iFaceInterface }, handler);
 	}
+
 
 }

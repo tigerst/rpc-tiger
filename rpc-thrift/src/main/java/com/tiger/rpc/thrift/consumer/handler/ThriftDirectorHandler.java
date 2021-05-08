@@ -1,9 +1,28 @@
 package com.tiger.rpc.thrift.consumer.handler;
 
+import com.alibaba.fastjson.JSON;
+import com.tiger.rpc.common.consumer.handler.DefaultRpcHandler;
+import com.tiger.rpc.common.consumer.policy.ProviderStrategy;
 import com.tiger.rpc.thrift.consumer.ThriftServiceDiscovery;
 import lombok.Data;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
+import org.apache.thrift.TServiceClient;
+import org.apache.thrift.TServiceClientFactory;
+import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TMultiplexedProtocol;
+import org.apache.thrift.protocol.TProtocol;
+import org.apache.thrift.transport.TFramedTransport;
+import org.apache.thrift.transport.TSocket;
+import org.apache.thrift.transport.TTransport;
+import org.apache.thrift.transport.TTransportException;
 
+import java.io.Closeable;
 import java.io.IOException;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * @ClassName: FixedThriftHandler.java
@@ -15,10 +34,94 @@ import java.io.IOException;
  * @Date: 2019/1/23
  */
 @Data
-public class ThriftDirectorHandler extends ThriftDefaultHandler {
+@Slf4j
+public class ThriftDirectorHandler extends DefaultRpcHandler<TSocket> implements InvocationHandler, Closeable {
+
+    /**
+     * client工厂方法
+     */
+    private TServiceClientFactory<TServiceClient> clientFactory;
+
+    @Setter
+    private ProviderStrategy<String> providerStrategy;
+
+    public ThriftDirectorHandler(GenericKeyedObjectPool<String, TSocket> pool){
+        super(pool);
+    }
 
     public ThriftDirectorHandler(ThriftServiceDiscovery discovery){
         super(discovery);
+    }
+
+    /**
+     * 异常处理
+     * socket异常时，需要校验socket
+     * 参数异常时，直接退出，不需要重试
+     * @param exception
+     * @param counter
+     * @param key
+     * @param tsocket
+     * @throws Exception
+     */
+    @Override
+    protected Throwable processException(Throwable exception, int counter, String key, TSocket tsocket) {
+        if(exception instanceof TTransportException){
+            //socket异常，关闭socket，加速回收
+            if(tsocket != null && tsocket.isOpen()){
+                log.warn("Close the unreachable socket[{}] of key[{}]", tsocket.getSocket().getLocalSocketAddress(), key);
+                tsocket.close();
+            }
+        }
+        if(exception instanceof IllegalArgumentException){
+            //参数异常，不重试，返回异常
+            return exception;
+        }
+        if(exception instanceof InvocationTargetException){
+            //反射异常，获取目标异常处理
+            Throwable targetException = ((InvocationTargetException) exception).getTargetException();
+            if(targetException instanceof IllegalArgumentException){
+                //参数异常则返回目标异常
+                return targetException;
+            } else if (targetException instanceof TTransportException){
+                //socket异常引起的反射异常，校验socket，关闭socket，加速回收
+                if(tsocket != null && tsocket.isOpen()){
+                    log.warn("Close the unreachable socket[{}] of key[{}]", tsocket.getSocket().getLocalSocketAddress(), key);
+                    tsocket.close();
+                }
+            }
+        }
+        //重试比较
+        if(counter >= super.getRetry()){
+            //超过重试次数的，则抛出异常
+            if(exception instanceof InvocationTargetException){
+                //反射异常，抛出目标异常
+                return ((InvocationTargetException) exception).getTargetException();
+            }
+            //返回异常
+            return exception;
+        }
+        //返回null
+        return null;
+    }
+
+    @Override
+    protected Object getClient(TSocket tSocket, Method method) throws Exception {
+        //包装管道
+        TTransport transport = new TFramedTransport(tSocket);
+        //包装管道为字节协议
+        TProtocol protocol = new TBinaryProtocol(transport);
+        //多服务协议
+        Class<?> enClosedClazz = method.getDeclaringClass().getEnclosingClass();
+        enClosedClazz = enClosedClazz == null? method.getDeclaringClass() : enClosedClazz;
+        TMultiplexedProtocol mpProtocol = new TMultiplexedProtocol(protocol, enClosedClazz.getName());
+        TServiceClient client = this.clientFactory.getClient(mpProtocol);
+        return client;
+    }
+
+    @Override
+    protected void processFinally(String key, Object client, TSocket tsocket) {
+        log.debug("Release the current socket[{}] connected to provider[{}]",
+                JSON.toJSONString(tsocket.getSocket().getLocalSocketAddress()), key);
     }
 
     @Override
@@ -27,6 +130,7 @@ public class ThriftDirectorHandler extends ThriftDefaultHandler {
          * 置空参数，加速回收
          */
         super.close();
+        this.clientFactory = null;
     }
 
 }
