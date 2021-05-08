@@ -94,7 +94,7 @@ public class NettyReferenceProxyClient {
 	}
 
 	/**
-	 * 代理执行，动态获取直连代理
+	 * 基于应用的代理执行，动态获取直连代理
 	 * 不做缓存，使用时创建，使用后销毁
 	 * @param iFaceInterface    接口方法
 	 * @param host  指定服务器
@@ -107,7 +107,7 @@ public class NettyReferenceProxyClient {
 	}
 
 	/**
-	 * 代理执行，动态获取直连代理
+	 * 基于应用的代理执行，动态获取直连代理
 	 * 不做缓存，使用时创建，使用后销毁
 	 * @param iFaceInterface	接口方法
 	 * @param host	指定服务器
