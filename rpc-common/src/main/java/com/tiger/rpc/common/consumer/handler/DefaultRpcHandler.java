@@ -1,6 +1,7 @@
 package com.tiger.rpc.common.consumer.handler;
 
 import com.alibaba.fastjson.JSON;
+import com.tiger.rpc.common.enums.ServiceCodeEnum;
 import com.tiger.rpc.common.exception.ServiceException;
 import com.tiger.rpc.common.helper.ReferenceHelper;
 import com.tiger.rpc.common.register.ReferenceRegister;
@@ -55,6 +56,14 @@ public abstract class DefaultRpcHandler<T> implements InvocationHandler, Closeab
 
     public DefaultRpcHandler(){
 
+    }
+
+    public DefaultRpcHandler(GenericKeyedObjectPool<String, T> pool){
+        if (pool == null) {
+            throw new ServiceException(ServiceCodeEnum.MISS_REQUIRED_PARAMETER.getCode(),
+                    String.format(ServiceCodeEnum.MISS_REQUIRED_PARAMETER.getValue(), "pool"));
+        }
+        this.pool = pool;
     }
 
     public DefaultRpcHandler(ReferenceRegister discovery){
@@ -242,6 +251,13 @@ public abstract class DefaultRpcHandler<T> implements InvocationHandler, Closeab
         //1.获取地址
         Class<?> enClosedClazz = method.getDeclaringClass().getEnclosingClass();
         enClosedClazz = enClosedClazz == null? method.getDeclaringClass() : enClosedClazz;
+
+        if (this.helper == null) {
+            //未引入发现服务工具情况下，使用uri
+            checkAddress(uri, method, args);
+            return uri;
+        }
+
         String key = this.helper.getAddress(enClosedClazz.getName(), serviceVersion, uri);
 
         //2.校验地址(控制到方法级别)
@@ -249,4 +265,9 @@ public abstract class DefaultRpcHandler<T> implements InvocationHandler, Closeab
 
         return key;
     }
+
+    protected void checkAddress(String uri, Method method, Object[] args) {
+        //不做处理，交给具体实现类处理
+    }
+
 }
