@@ -19,6 +19,8 @@ public enum ServiceCodeEnum {
 
     MISS_REQUIRED_PARAMETER("MISS_REQUIRED_PARAMETER", "Miss required parameter[%s]", "缺失必选参数 (%s)"),
 
+    ILLEGAL_PARAMETER("ILLEGAL_PARAMETER", "Illegal parameter[%s]", "非法参数 (%s)"),
+
     DISCOVERY_NOT_INITIALIZED("DISCOVERY_NOT_INITIALIZED", "Services discovery not initialized", "服务发现器为开启"),
 
     PROVIDER_URI_NOT_ILLEGAL("URI_NOT_ILLEGAL", "provider uri[%s] illegal", "服务提供者uri[%s]非法"),
