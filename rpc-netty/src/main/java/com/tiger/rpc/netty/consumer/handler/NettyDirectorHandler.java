@@ -42,17 +42,17 @@ public class NettyDirectorHandler extends DefaultRpcHandler<NSocket> implements 
      * @param exception
      * @param counter
      * @param key
-     * @param tsocket
+     * @param tSocket
      * @throws Exception
      */
     @Override
-    protected Throwable processException(Throwable exception, int counter, String key, NSocket tsocket) {
+    protected Throwable processException(Throwable exception, int counter, String key, NSocket tSocket) {
         if(exception instanceof SocketException){
             //tSocket异常，关闭channel，加速回收
-            if(tsocket != null && tsocket.isOpen()){
-                log.warn("Close the unreachable socket[{}] of key[{}]", tsocket, key);
-                tsocket.close();
-                tsocket = null;
+            if(tSocket != null && tSocket.isOpen()){
+                log.warn("Close the unreachable socket[{}] of key[{}]", tSocket, key);
+                tSocket.close();
+                tSocket = null;
             }
         }
         if(exception instanceof IllegalArgumentException){
@@ -67,10 +67,10 @@ public class NettyDirectorHandler extends DefaultRpcHandler<NSocket> implements 
                 return targetException;
             } else if (targetException instanceof SocketException){
                 //tSocket异常引起的反射异常，校验tSocket，关闭tSocket，加速回收
-                if(tsocket != null && tsocket.isOpen()){
-                    log.warn("Close the unreachable socket[{}] of key[{}]", tsocket.getLocalSocketAddress(), key);
-                    tsocket.close();
-                    tsocket = null;
+                if(tSocket != null && tSocket.isOpen()){
+                    log.warn("Close the unreachable socket[{}] of key[{}]", tSocket.getLocalSocketAddress(), key);
+                    tSocket.close();
+                    tSocket = null;
                 }
             }
         }
@@ -89,10 +89,10 @@ public class NettyDirectorHandler extends DefaultRpcHandler<NSocket> implements 
     }
 
     @Override
-    protected Object getClient(NSocket tsocket, Method method) throws Exception {
+    protected Object getClient(NSocket tSocket, Method method) throws Exception {
         //设置channel，返回远程客户端
         NettyServiceClient nettyClient = new NettyServiceClient();
-        nettyClient.setNSocket(tsocket);
+        nettyClient.setNSocket(tSocket);
         return nettyClient;
     }
 

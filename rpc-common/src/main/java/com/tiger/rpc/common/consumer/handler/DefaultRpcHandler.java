@@ -190,11 +190,11 @@ public abstract class DefaultRpcHandler<T> implements InvocationHandler, Closeab
      * @param exception 异常
      * @param counter   计数器
      * @param key   机器
-     * @param tsocket   连接
+     * @param tSocket   连接
      * @return
      * @throws Throwable
      */
-    protected abstract Throwable processException(Throwable exception, int counter, String key, T tsocket);
+    protected abstract Throwable processException(Throwable exception, int counter, String key, T tSocket);
 
     /**
      * 异常日志

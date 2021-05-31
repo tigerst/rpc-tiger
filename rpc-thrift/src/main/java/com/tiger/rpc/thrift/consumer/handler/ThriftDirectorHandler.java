@@ -60,16 +60,16 @@ public class ThriftDirectorHandler extends DefaultRpcHandler<TSocket> implements
      * @param exception
      * @param counter
      * @param key
-     * @param tsocket
+     * @param tSocket
      * @throws Exception
      */
     @Override
-    protected Throwable processException(Throwable exception, int counter, String key, TSocket tsocket) {
+    protected Throwable processException(Throwable exception, int counter, String key, TSocket tSocket) {
         if(exception instanceof TTransportException){
             //socket异常，关闭socket，加速回收
-            if(tsocket != null && tsocket.isOpen()){
-                log.warn("Close the unreachable socket[{}] of key[{}]", tsocket.getSocket().getLocalSocketAddress(), key);
-                tsocket.close();
+            if(tSocket != null && tSocket.isOpen()){
+                log.warn("Close the unreachable socket[{}] of key[{}]", tSocket.getSocket().getLocalSocketAddress(), key);
+                tSocket.close();
             }
         }
         if(exception instanceof IllegalArgumentException){
@@ -84,9 +84,9 @@ public class ThriftDirectorHandler extends DefaultRpcHandler<TSocket> implements
                 return targetException;
             } else if (targetException instanceof TTransportException){
                 //socket异常引起的反射异常，校验socket，关闭socket，加速回收
-                if(tsocket != null && tsocket.isOpen()){
-                    log.warn("Close the unreachable socket[{}] of key[{}]", tsocket.getSocket().getLocalSocketAddress(), key);
-                    tsocket.close();
+                if(tSocket != null && tSocket.isOpen()){
+                    log.warn("Close the unreachable socket[{}] of key[{}]", tSocket.getSocket().getLocalSocketAddress(), key);
+                    tSocket.close();
                 }
             }
         }
