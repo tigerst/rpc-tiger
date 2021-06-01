@@ -6,6 +6,7 @@ import com.tiger.rpc.common.enums.ServiceCodeEnum;
 import com.tiger.rpc.common.exception.ServiceException;
 import com.tiger.rpc.common.helper.ReferenceHelper;
 import com.tiger.rpc.common.register.ReferenceRegister;
+import com.tiger.rpc.common.utils.Constants;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -268,21 +269,27 @@ public abstract class DefaultRpcHandler<T> implements InvocationHandler, Closeab
             key = this.helper.getAddress(enClosedClazz.getName(), serviceVersion, uris);
             //2.校验地址(控制到方法级别)
             helper.checkAddress(key, method, args);
-        } else {
+        } else if (CollectionUtils.isNotEmpty(uris)){
+            //从uris中选择路径
             //未引入发现服务工具情况
             if (providerStrategy != null) {
                 //1.获取地址
                 key = providerStrategy.getProvider(uris);
                 //2.校验地址(控制到方法级别)
                 providerStrategy.checkProvider(key, method, args);
-            } else if (CollectionUtils.isEmpty(uris)) {
+            } else {
                 //1.获取地址：随机选择
                 Collections.shuffle(uris);
                 key = uris.get(0);
-            } else {
-                throw new ServiceException(ServiceCodeEnum.SERVICE_NO_AVAILABLE_PROVIDERS.getCode(),
-                        String.format(ServiceCodeEnum.SERVICE_NO_AVAILABLE_PROVIDERS.getValue(), enClosedClazz.getName()));
             }
+            //移除协议部分
+            int protocolIdx = key.indexOf(Constants.PROTOCOL_HOST_SEPARATOR);
+            if (protocolIdx > 0) {
+                key = key.substring(protocolIdx + Constants.PROTOCOL_HOST_SEPARATOR.length());
+            }
+        } else {
+            throw new ServiceException(ServiceCodeEnum.SERVICE_NO_AVAILABLE_PROVIDERS.getCode(),
+                    String.format(ServiceCodeEnum.SERVICE_NO_AVAILABLE_PROVIDERS.getValue(), enClosedClazz.getName()));
         }
         return key;
     }
