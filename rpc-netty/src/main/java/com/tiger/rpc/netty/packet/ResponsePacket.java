@@ -31,4 +31,9 @@ public class ResponsePacket extends RpcPacket implements Serializable {
      */
     private Throwable throwable;
 
+    /**
+     * 是否返回标记
+     */
+    private boolean returnedFlag = false;
+
 }

@@ -34,6 +34,7 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<ResponsePack
         if (cachedResponseRpc != null) {
             synchronized (cachedResponseRpc) {
                 //加对象锁，设置属性，并唤醒wait对象线程，继续执行代码
+                cachedResponseRpc.setReturnedFlag(true);
                 cachedResponseRpc.setThrowable(responseRpc.getThrowable());
                 cachedResponseRpc.setResult(responseRpc.getResult());
                 cachedResponseRpc.notify();

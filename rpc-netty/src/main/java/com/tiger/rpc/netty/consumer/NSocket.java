@@ -12,6 +12,7 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import lombok.Getter;
 import lombok.ToString;
 
 import java.io.Closeable;
@@ -43,6 +44,7 @@ public class NSocket implements Closeable {
     /**
      * Socket耗时设置
      */
+    @Getter
     private Integer timeout;
 
     /**

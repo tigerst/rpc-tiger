@@ -1,6 +1,8 @@
 package com.tiger.rpc.netty.consumer;
 
 import com.tiger.rpc.common.enums.ProtocolTypeEnum;
+import com.tiger.rpc.common.enums.ServiceCodeEnum;
+import com.tiger.rpc.common.exception.ServiceException;
 import com.tiger.rpc.netty.consumer.handler.NettyClientHandler;
 import com.tiger.rpc.netty.packet.RequestPacket;
 import com.tiger.rpc.netty.packet.ResponsePacket;
@@ -63,9 +65,16 @@ public class NettyServiceClient {
             NettyClientHandler.waitingRPC.put(requestId, responseRpc);
             //阻塞发送：线程等待，一直到有结果返回（ClientHandler调用了responseRpc对象，设置属性）。
             nSocket.writeAndFlush(requestRpc);
-            //对象线程等待
+            //对象线程等待，最大等待时间与socket超时相同
             synchronized (responseRpc) {
-                responseRpc.wait();
+                responseRpc.wait(nSocket.getTimeout());
+            }
+
+            /**
+             * 超时处理
+             */
+            if (!responseRpc.isReturnedFlag()) {
+                throw new ServiceException(ServiceCodeEnum.SERVICE_TIMEOUT.getCode(), String.format(ServiceCodeEnum.SERVICE_TIMEOUT.getValue(), nSocket.getTimeout()));
             }
 
             if (responseRpc.getThrowable() != null) {

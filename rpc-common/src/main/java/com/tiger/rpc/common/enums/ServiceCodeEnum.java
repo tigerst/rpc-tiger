@@ -17,6 +17,8 @@ public enum ServiceCodeEnum {
 
     SERVICE_NO_AVAILABLE_PROVIDERS("SERVICE_NO_AVAILABLE_PROVIDERS", "Service[%s] has no providers for this consumer", "服务【%s】对该引用机器没有可用提供者"),
 
+    SERVICE_TIMEOUT("SERVICE_TIMEOUT", "System service response timeout[%d] error", "系统服务响应超时[%s]"),
+
     MISS_REQUIRED_PARAMETER("MISS_REQUIRED_PARAMETER", "Miss required parameter[%s]", "缺失必选参数 (%s)"),
 
     ILLEGAL_PARAMETER("ILLEGAL_PARAMETER", "Illegal parameter[%s]", "非法参数 (%s)"),
