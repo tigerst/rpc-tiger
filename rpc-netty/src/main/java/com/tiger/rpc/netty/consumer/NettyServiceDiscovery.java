@@ -127,7 +127,8 @@ public class NettyServiceDiscovery extends ReferenceRegister {
 					handler.setRetry(config.getRetry());
 				}
 				//获取类加载器
-				ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+//				ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+				ClassLoader classLoader = config.getInterfaceClass().getClassLoader();
 				//创建jdk反射代理实例
 				proxy = Proxy.newProxyInstance(classLoader, new Class[] { config.getInterfaceClass() }, handler);
 				//回写代理

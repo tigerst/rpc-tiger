@@ -73,7 +73,8 @@ public class NettyReferenceProxyClient {
 			handler.setRetry(config.getRetry());
 		}
 		//获取类加载器
-		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+//		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader classLoader = iFaceInterface.getClassLoader();
 		//创建代理实例
 		T proxy = (T) Proxy.newProxyInstance(classLoader, new Class[] { iFaceInterface }, handler);
 		//反填代理
@@ -153,7 +154,8 @@ public class NettyReferenceProxyClient {
 		//设置小集群地址
 		handler.setUris(uris);
 		//获取类加载器
-		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+//		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader classLoader = iFaceInterface.getClassLoader();
 		//创建代理实例，强转类型
 		return (T) Proxy.newProxyInstance(classLoader, new Class[] { iFaceInterface }, handler);
 	}

@@ -105,7 +105,8 @@ public class NettyReferenceProxyFactoryBean<T> implements FactoryBean<T>, Initia
             handler.setRetry(config.getRetry());
         }
         //获取类加载器
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+//        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader classLoader = iFaceInterface.getClassLoader();
         //创建代理实例
         this.proxyClient = (T) Proxy.newProxyInstance(classLoader, new Class[] { iFaceInterface }, handler);
     }

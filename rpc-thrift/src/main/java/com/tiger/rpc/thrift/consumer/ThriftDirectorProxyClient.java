@@ -130,7 +130,8 @@ public class ThriftDirectorProxyClient {
 		handler.setUris(uris);
 
 		//获取类加载器
-		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+//		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader classLoader = iFaceInterface.getClassLoader();
 		//创建代理实例，强转类型
 		return (T) Proxy.newProxyInstance(classLoader, new Class[] { iFaceInterface }, handler);
 	}
