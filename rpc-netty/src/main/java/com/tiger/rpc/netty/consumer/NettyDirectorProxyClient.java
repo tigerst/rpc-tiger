@@ -115,6 +115,10 @@ public class NettyDirectorProxyClient {
 			throw new ServiceException(ServiceCodeEnum.ILLEGAL_PARAMETER.getCode(),
 					String.format(ServiceCodeEnum.ILLEGAL_PARAMETER.getValue(), "hostPorts"));
 		}
+		if (pool == null || pool.isClosed()) {
+			throw new ServiceException(ServiceCodeEnum.ILLEGAL_PARAMETER.getCode(),
+					String.format(ServiceCodeEnum.ILLEGAL_PARAMETER.getValue(), "pool"));
+		}
 		//初始化直连代理(socket连接池必须传入)
 		NettyDirectorHandler handler = new NettyDirectorHandler(pool);
 		//传入策略
@@ -128,6 +132,21 @@ public class NettyDirectorProxyClient {
 		ClassLoader classLoader = iFaceInterface.getClassLoader();
 		//创建代理实例，强转类型
 		return (T) Proxy.newProxyInstance(classLoader, new Class[] { iFaceInterface }, handler);
+	}
+
+	/**
+	 * 代理关闭时，关闭pool
+	 */
+	public void close () {
+		if (pool != null) {
+			try {
+				pool.close();
+			} catch (Exception e) {
+
+			} finally {
+				pool = null;
+			}
+		}
 	}
 
 }
