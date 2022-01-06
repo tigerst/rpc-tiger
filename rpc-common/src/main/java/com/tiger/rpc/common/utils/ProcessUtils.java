@@ -158,8 +158,33 @@ public class ProcessUtils {
         return forceKillByPid(pid);
     }
 
+    /**
+     * 检测linux进程
+     * @param pid   进程编号
+     * @return
+     */
+    public static boolean exist(long pid){
+        Process process = null;
+        boolean result = false;
+        String command = "kill -0 " + pid;
+        try{
+            //杀掉进程
+            process = Runtime.getRuntime().exec(command);
+            result = process.waitFor() == 0 ? true : false;
+        }catch(Exception e){
+            log.info("kill process error", e);
+        }finally{
+            if(process != null) {
+                process.destroy();
+            }
+        }
+        return result;
+    }
+
     public static void main(String[] args) {
-        System.out.println(forceKillByPid(27864));
+//        System.out.println(forceKillByPid(27864));
+        System.out.println(exist(1674));
+        System.out.println(exist(27864));
     }
 
 }
