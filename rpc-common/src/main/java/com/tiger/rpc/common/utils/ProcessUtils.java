@@ -172,7 +172,7 @@ public class ProcessUtils {
             process = Runtime.getRuntime().exec(command);
             result = process.waitFor() == 0 ? true : false;
         }catch(Exception e){
-            log.info("kill process error", e);
+            log.info("Check process error", e);
         }finally{
             if(process != null) {
                 process.destroy();
